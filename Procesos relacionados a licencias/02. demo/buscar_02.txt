@@ -1,0 +1,5 @@
+{
+  "action": "buscar",
+  "tenant_id": "OneMotoring",
+  "licencia_id": "456"
+}

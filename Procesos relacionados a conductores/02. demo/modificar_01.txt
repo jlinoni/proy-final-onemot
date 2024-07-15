@@ -1,0 +1,19 @@
+{
+  "action": "crear",
+  "tenant_id": "OneMotoring",
+  "conductor_id": "00001",
+  "conductor_datos": {
+	"nombre": "Juan Herencia Update",
+	"sexo": "M",
+	"fecha_nac": "2000-09-01",
+	"celular": "928473820",
+	"licencia": "ABC123DEF",
+	"direccion": {
+		"direcc": "Av. Alfonso Ugarte 235",
+		"distrito": "Lima",
+		"provincia": "Lima",
+		"departamento": "Lima",
+		"pais": "Perú"
+	} 
+  }
+}

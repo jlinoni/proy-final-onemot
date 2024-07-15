@@ -1,0 +1,19 @@
+{
+  "action": "crear",
+  "tenant_id": "OneMotoring",
+  "conductor_id": "00002",
+  "conductor_datos": {
+	"nombre": "Jose Zuñiga Update",
+	"sexo": "M",
+	"fecha_nac": "2002-05-01",
+	"celular": "943859387",
+	"licencia": "GHI567JKL",
+	"direccion": {
+		"direcc": "Av. Brasil 321",
+		"distrito": "Jesus Maria",
+		"provincia": "Lima",
+		"departamento": "Lima",
+		"pais": "Perú"
+	} 
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "action": "crear",
+  "tenant_id": "OneMotoring",
+  "conductor_id": "00003",
+  "conductor_datos": {
+	"nombre": "Jeyson Lino Update",
+	"sexo": "M",
+	"fecha_nac": "2004-01-01",
+	"celular": "961209738",
+	"licencia": "XYZ987ABC",
+	"direccion": {
+		"direcc": "Av. Ayacucho 932",
+		"distrito": "Santiago de Surco",
+		"provincia": "Lima",
+		"departamento": "Lima",
+		"pais": "Perú"
+	} 
+  }
+}

@@ -1,0 +1,177 @@
+import boto3
+import json
+from boto3.dynamodb.conditions import Key, Attr
+
+def lambda_handler(event, context):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('ddb_Licencia')
+    sns_client = boto3.client('sns')
+    sqs_client = boto3.client('sqs')
+
+    if 'Records' in event:  # Event triggered by SNS
+        for record in event['Records']:
+            sns_message = json.loads(record['Sns']['Message'])
+            action = sns_message.get('action')
+            tenant_id = sns_message['tenant_id']
+            conductor_id = sns_message['conductor_id']
+
+            if action == 'eliminar_licencias':
+                # Buscar licencias asociadas al conductor
+                response = table.scan(
+                    FilterExpression=Attr('tenant_id').eq(tenant_id) & Attr('licencia_datos.conductor_id').eq(conductor_id)
+                )
+                items = response['Items']
+                
+                # Eliminar cada licencia encontrada
+                for item in items:
+                    licencia_id = item['licencia_id']
+                    table.delete_item(
+                        Key={
+                            'tenant_id': tenant_id,
+                            'licencia_id': licencia_id
+                        }
+                    )
+                    
+                return {
+                    'statusCode': 200,
+                    'message': f'Licencias asociadas al conductor {conductor_id} eliminadas exitosamente'
+                }
+
+    else:  # Direct invocation for standard actions
+        # Entrada (json)
+        action = event.get('action')
+        tenant_id = event['tenant_id']
+        licencia_id = event.get('licencia_id')  # Optional for listar
+
+        if action == 'crear':
+            licencia_datos = event['licencia_datos']
+            licencia = {
+                'tenant_id': tenant_id,
+                'licencia_id': licencia_id,
+                'licencia_datos': licencia_datos
+            }
+            response = table.put_item(Item=licencia)
+            
+            # Publicar en SNS
+            #sns_client = boto3.client('sns')
+            response_sns = sns_client.publish(
+                TopicArn = 'arn:aws:sns:us-east-1:556384637097:sns_licencia_handler',
+                Subject = 'Nueva licencia',
+                Message = json.dumps(licencia),
+                MessageAttributes = {
+                    'tenant_id': {'DataType': 'String', 'StringValue': tenant_id }
+                }
+            )
+            print(response_sns)
+            
+            # Publicar en SQS
+            response_sqs = sqs_client.send_message(
+                QueueUrl = 'https://sqs.us-east-1.amazonaws.com/556384637097/sqs_solicitudes',
+                MessageBody = json.dumps(licencia)
+            )
+            print(response_sqs)
+    
+            return {
+                'statusCode': 200,
+                'message': 'Licencia creada exitosamente',
+                'response': response
+            }
+        
+        elif action == 'modificar':
+            licencia_datos = event['licencia_datos']
+            response = table.update_item(
+                Key={
+                    'tenant_id': tenant_id,
+                    'licencia_id': licencia_id
+                },
+                UpdateExpression="set licencia_datos=:licencia_datos",
+                ExpressionAttributeValues={
+                    ':licencia_datos': licencia_datos
+                },
+                ReturnValues="UPDATED_NEW"
+            )
+            
+            # Publicar en SNS
+            licencia_actualizada = {
+                'tenant_id': tenant_id,
+                'licencia_id': licencia_id,
+                'licencia_datos': licencia_datos
+            }
+            #sns_client = boto3.client('sns')
+            response_sns = sns_client.publish(
+                TopicArn = 'arn:aws:sns:us-east-1:556384637097:sns_licencia_handler',
+                Subject = 'Licencia modificada',
+                Message = json.dumps(licencia_actualizada),
+                MessageAttributes = {
+                    'tenant_id': {'DataType': 'String', 'StringValue': tenant_id }
+                }
+            )
+            print(response_sns)
+        
+            return {
+                'statusCode': 200,
+                'message': 'Licencia modificada exitosamente',
+                'response': response
+            }
+        
+        elif action == 'buscar':
+            response = table.get_item(
+                Key={
+                    'tenant_id': tenant_id,
+                    'licencia_id': licencia_id
+                }
+            )
+            return {
+                'statusCode': 200,
+                'message': 'Licencia encontrada',
+                'response': response
+            }
+        
+        elif action == 'listar':
+            response = table.query(
+                KeyConditionExpression=Key('tenant_id').eq(tenant_id)
+            )
+            items = response['Items']
+            num_reg = response['Count']
+            return {
+                'statusCode': 200,
+                'tenant_id': tenant_id,
+                'num_reg': num_reg,
+                'Licencias': items
+            }
+        
+        elif action == 'eliminar':
+            response = table.delete_item(
+                Key={
+                    'tenant_id': tenant_id,
+                    'licencia_id': licencia_id
+                }
+            )
+            
+            # Publicar en SNS
+            licencia_eliminada = {
+                'tenant_id': tenant_id,
+                'licencia_id': licencia_id
+            }
+            #sns_client = boto3.client('sns')
+            response_sns = sns_client.publish(
+                TopicArn = 'arn:aws:sns:us-east-1:556384637097:sns_licencia_handler',
+                Subject = 'Licencia eliminada',
+                Message = json.dumps(licencia_eliminada),
+                MessageAttributes = {
+                    'tenant_id': {'DataType': 'String', 'StringValue': tenant_id }
+                }
+            )
+            print(response_sns)
+        
+            return {
+                'statusCode': 200,
+                'message': 'Licencia eliminada exitosamente',
+                'response': response
+            }
+        
+        else:
+            return {
+                'statusCode': 400,
+                'message': 'Acción no válida'
+            }

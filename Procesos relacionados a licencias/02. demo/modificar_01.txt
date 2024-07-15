@@ -1,0 +1,14 @@
+{
+  "action": "crear",
+  "tenant_id": "OneMotoring",
+  "licencia_id": "123",
+  "licencia_datos": {
+    "conductor_id": "00001",
+    "numero": "ABC123DEF",
+    "tipo": "B1",
+    "estado": "Pendiente",
+    "fecha_expedicion": "2020-04-01",
+    "fecha_inicio_vigencia": "2020-04-02",
+    "fecha_fin_vigencia": "2024-04-02"
+  }
+}

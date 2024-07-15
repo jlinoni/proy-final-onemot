@@ -1,0 +1,14 @@
+{
+  "action": "crear",
+  "tenant_id": "OneMotoring",
+  "licencia_id": "789",
+  "licencia_datos": {
+    "conductor_id": "00003",
+    "numero": "XYZ987ABC",
+    "tipo": "A3",
+    "estado": "Pendiente",
+    "fecha_expedicion": "2022-08-01",
+    "fecha_inicio_vigencia": "2022-08-02",
+    "fecha_fin_vigencia": "2027-08-02"
+  }
+}

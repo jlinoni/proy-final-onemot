@@ -1,0 +1,106 @@
+import boto3
+import json
+from boto3.dynamodb.conditions import Key
+
+def lambda_handler(event, context):
+    # Entrada (json)
+    action = event.get('action')
+    tenant_id = event['tenant_id']
+    conductor_id = event.get('conductor_id')  # Optional for listar
+
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('ddb_conductor')
+    sns_client = boto3.client('sns')
+
+    if action == 'crear':
+        conductor_datos = event['conductor_datos']
+        alumno = {
+            'tenant_id': tenant_id,
+            'conductor_id': conductor_id,
+            'conductor_datos': conductor_datos
+        }
+        response = table.put_item(Item=alumno)
+        return {
+            'statusCode': 200,
+            'message': 'Conductor creado exitosamente',
+            'response': response
+        }
+    
+    elif action == 'modificar':
+        conductor_datos = event['conductor_datos']
+        response = table.update_item(
+            Key={
+                'tenant_id': tenant_id,
+                'conductor_id': conductor_id
+            },
+            UpdateExpression="set conductor_datos=:conductor_datos",
+            ExpressionAttributeValues={
+                ':conductor_datos': conductor_datos
+            },
+            ReturnValues="UPDATED_NEW"
+        )
+        return {
+            'statusCode': 200,
+            'message': 'Conductor modificado exitosamente',
+            'response': response
+        }
+    
+    elif action == 'buscar':
+        response = table.get_item(
+            Key={
+                'tenant_id': tenant_id,
+                'conductor_id': conductor_id
+            }
+        )
+        return {
+            'statusCode': 200,
+            'message': 'Conductor encontrado',
+            'response': response
+        }
+    
+    elif action == 'listar':
+        response = table.query(
+            KeyConditionExpression=Key('tenant_id').eq(tenant_id)
+        )
+        items = response['Items']
+        num_reg = response['Count']
+        return {
+            'statusCode': 200,
+            'tenant_id': tenant_id,
+            'num_reg': num_reg,
+            'conductores': items
+        }
+    
+    elif action == 'eliminar':
+        response = table.delete_item(
+            Key={
+                'tenant_id': tenant_id,
+                'conductor_id': conductor_id
+            }
+        )
+        
+        # Publicar en SNS
+        sns_message = {
+            'tenant_id': tenant_id,
+            'conductor_id': conductor_id,
+            'action': 'eliminar_licencias'
+        }
+        response_sns = sns_client.publish(
+            TopicArn = 'arn:aws:sns:us-east-1:556384637097:sns_conductor_handler',
+            Subject = 'Conductor eliminado',
+            Message = json.dumps(sns_message)
+        )
+        
+        print(response_sns)   
+    
+        return {
+            'statusCode': 200,
+            'message': 'Conductor eliminado exitosamente',
+            'response': response
+        }
+    
+    else:
+        return {
+            'statusCode': 400,
+            'message': 'Acción no válida'
+        }
